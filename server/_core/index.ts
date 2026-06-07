@@ -219,7 +219,14 @@ async function startServer() {
   });
 
   // ─────────────────────────────────────────────────────────────
-  app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext,
+      allowMethodOverride: true,
+    }),
+  );
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
