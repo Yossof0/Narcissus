@@ -2,7 +2,15 @@ import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ShoppingCart, Minus, Plus, ChevronDown, Heart, RotateCcw } from "lucide-react";
+import {
+  ChevronLeft,
+  ShoppingCart,
+  Minus,
+  Plus,
+  ChevronDown,
+  Heart,
+  RotateCcw,
+} from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/_core/hooks/useFavorites";
 import { StorefrontLayout } from "@/components/StorefrontLayout";
@@ -10,11 +18,23 @@ import { StarRating } from "@/components/StarRating";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { isAdmin } from "@shared/privileges";
-import { getEffectiveDiscount, calculateDiscountedPrice, formatDiscount } from "@shared/discount";
+import {
+  getEffectiveDiscount,
+  calculateDiscountedPrice,
+  formatDiscount,
+} from "@shared/discount";
 import { toast } from "sonner";
 import type { CustomizationOption } from "@/pages/Admin";
 
-function ProductImage({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
+function ProductImage({
+  src,
+  alt,
+  className,
+}: {
+  src: string | null;
+  alt: string;
+  className?: string;
+}) {
   const [errored, setErrored] = useState(false);
   if (!src || errored) {
     return (
@@ -33,7 +53,11 @@ function ProductImage({ src, alt, className }: { src: string | null; alt: string
   );
 }
 
-function CounterInput({ option, value, onChange }: {
+function CounterInput({
+  option,
+  value,
+  onChange,
+}: {
   option: CustomizationOption;
   value: number;
   onChange: (v: number) => void;
@@ -50,7 +74,9 @@ function CounterInput({ option, value, onChange }: {
       >
         <Minus className="w-3 h-3" />
       </button>
-      <span className="w-10 text-center text-sm font-light border-x border-border py-2">{value}</span>
+      <span className="w-10 text-center text-sm font-light border-x border-border py-2">
+        {value}
+      </span>
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
@@ -67,7 +93,9 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const productId = parseInt(id || "0");
-  const { data: product, isLoading } = trpc.products.getById.useQuery({ id: productId });
+  const { data: product, isLoading } = trpc.products.getById.useQuery({
+    id: productId,
+  });
   const { data: relatedProducts = [] } = trpc.products.getByCategory.useQuery(
     { category: product?.category || "" },
     { enabled: !!product?.category }
@@ -89,19 +117,27 @@ export default function ProductDetail() {
     },
     onError: () => toast.error("Failed to reset rating."),
   });
-  const [customValues, setCustomValues] = useState<Record<string, string | number>>({});
+  const [customValues, setCustomValues] = useState<
+    Record<string, string | number>
+  >({});
 
   // Parse customization options from product
   const customOptions = useMemo<CustomizationOption[]>(() => {
-    try { return JSON.parse((product as any)?.customizations || "[]"); } catch { return []; }
+    try {
+      return JSON.parse((product as any)?.customizations || "[]");
+    } catch {
+      return [];
+    }
   }, [product]);
 
   // Initialize default values when options load
   useMemo(() => {
     const defaults: Record<string, string | number> = {};
     customOptions.forEach(opt => {
-      if (opt.type === "counter") defaults[opt.id] = opt.defaultValue ?? opt.min ?? 1;
-      else if (opt.type === "dropdown" && opt.choices?.length) defaults[opt.id] = opt.choices[0];
+      if (opt.type === "counter")
+        defaults[opt.id] = opt.defaultValue ?? opt.min ?? 1;
+      else if (opt.type === "dropdown" && opt.choices?.length)
+        defaults[opt.id] = opt.choices[0];
     });
     setCustomValues(defaults);
   }, [customOptions.length]);
@@ -129,18 +165,30 @@ export default function ProductDetail() {
     );
   }
 
-  const decreaseQty = () => setQuantity((q) => Math.max(1, q - 1));
-  const increaseQty = () => setQuantity((q) => q + 1);
+  const decreaseQty = () => setQuantity(q => Math.max(1, q - 1));
+  const increaseQty = () => setQuantity(q => q + 1);
 
   const handleAddToCart = () => {
     const customizations = customOptions.map(opt => ({
       title: opt.title,
-      value: customValues[opt.id] ?? (opt.type === "counter" ? (opt.defaultValue ?? 1) : (opt.choices?.[0] ?? "")),
+      value:
+        customValues[opt.id] ??
+        (opt.type === "counter"
+          ? (opt.defaultValue ?? 1)
+          : (opt.choices?.[0] ?? "")),
     }));
+    const discount = getEffectiveDiscount(
+      product as any,
+      majorDiscount ?? null
+    );
+    const finalPriceCents = discount
+      ? calculateDiscountedPrice(product.price, discount)
+      : product.price;
     addToCart({
       id: product.id,
       name: product.name,
-      price: product.price / 100,
+      price: finalPriceCents / 100,
+      originalPrice: discount ? product.price / 100 : undefined,
       image: product.imageUrl || "",
       quantity,
       customizations: customizations.length > 0 ? customizations : undefined,
@@ -197,9 +245,16 @@ export default function ProductDetail() {
                         ? "border-red-300 bg-red-50 text-red-500"
                         : "border-border hover:border-red-300 hover:text-red-400"
                     }`}
-                    aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                    aria-label={
+                      isFavorite(product.id)
+                        ? "Remove from favorites"
+                        : "Add to favorites"
+                    }
                   >
-                    <Heart className="w-5 h-5" fill={isFavorite(product.id) ? "currentColor" : "none"} />
+                    <Heart
+                      className="w-5 h-5"
+                      fill={isFavorite(product.id) ? "currentColor" : "none"}
+                    />
                   </button>
                 </div>
                 <div className="w-16 h-px bg-accent mb-4" />
@@ -224,13 +279,19 @@ export default function ProductDetail() {
               </div>
 
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                {product.description || "Premium handmade product from Narcissus collection."}
+                {product.description ||
+                  "Premium handmade product from Narcissus collection."}
               </p>
 
               <div className="mb-8">
                 {(() => {
-                  const discount = getEffectiveDiscount(product as any, majorDiscount ?? null);
-                  const finalPrice = discount ? calculateDiscountedPrice(product.price, discount) : product.price;
+                  const discount = getEffectiveDiscount(
+                    product as any,
+                    majorDiscount ?? null
+                  );
+                  const finalPrice = discount
+                    ? calculateDiscountedPrice(product.price, discount)
+                    : product.price;
                   return (
                     <div className="flex items-center gap-3 flex-wrap">
                       <p className="text-4xl font-light text-foreground">
@@ -262,12 +323,21 @@ export default function ProductDetail() {
                       {opt.type === "dropdown" && opt.choices && (
                         <div className="relative w-48">
                           <select
-                            value={customValues[opt.id] as string ?? opt.choices[0]}
-                            onChange={e => setCustomValues(v => ({ ...v, [opt.id]: e.target.value }))}
+                            value={
+                              (customValues[opt.id] as string) ?? opt.choices[0]
+                            }
+                            onChange={e =>
+                              setCustomValues(v => ({
+                                ...v,
+                                [opt.id]: e.target.value,
+                              }))
+                            }
                             className="w-full appearance-none pl-4 pr-8 py-3 border border-border rounded bg-background text-foreground font-light focus:outline-none focus:ring-2 focus:ring-accent"
                           >
                             {opt.choices.map(choice => (
-                              <option key={choice} value={choice}>{choice}</option>
+                              <option key={choice} value={choice}>
+                                {choice}
+                              </option>
                             ))}
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -276,8 +346,15 @@ export default function ProductDetail() {
                       {opt.type === "counter" && (
                         <CounterInput
                           option={opt}
-                          value={customValues[opt.id] as number ?? opt.defaultValue ?? opt.min ?? 1}
-                          onChange={v => setCustomValues(cv => ({ ...cv, [opt.id]: v }))}
+                          value={
+                            (customValues[opt.id] as number) ??
+                            opt.defaultValue ??
+                            opt.min ??
+                            1
+                          }
+                          onChange={v =>
+                            setCustomValues(cv => ({ ...cv, [opt.id]: v }))
+                          }
                         />
                       )}
                     </div>
@@ -325,11 +402,15 @@ export default function ProductDetail() {
               <div className="mt-12 pt-8 border-t border-border">
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">CRAFTSMANSHIP</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      CRAFTSMANSHIP
+                    </p>
                     <p className="text-foreground">Handmade with care</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">DELIVERY</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      DELIVERY
+                    </p>
                     <p className="text-foreground">All over Egypt</p>
                   </div>
                 </div>
@@ -345,9 +426,9 @@ export default function ProductDetail() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
                 {relatedProducts
-                  .filter((p) => p.id !== product.id)
+                  .filter(p => p.id !== product.id)
                   .slice(0, 4)
-                  .map((rp) => (
+                  .map(rp => (
                     <div
                       key={rp.id}
                       className="group cursor-pointer"

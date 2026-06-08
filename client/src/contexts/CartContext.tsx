@@ -8,7 +8,8 @@ export interface CartItemCustomization {
 export interface CartItem {
   id: number;
   name: string;
-  price: number;
+  price: number;        // discounted price (or original if no discount)
+  originalPrice?: number; // original price before discount, if applicable
   image: string;
   quantity: number;
   customizations?: CartItemCustomization[];

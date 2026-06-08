@@ -21,10 +21,11 @@ function ProductThumb({ src, alt }: { src: string; alt: string }) {
       src={src}
       alt={alt}
       className="w-full h-full object-cover"
-      onError={(e) => {
+      onError={e => {
         const el = e.currentTarget;
         el.style.display = "none";
-        el.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-gray-400 bg-gray-100">No image</div>';
+        el.parentElement!.innerHTML =
+          '<div class="w-full h-full flex items-center justify-center text-xs text-gray-400 bg-gray-100">No image</div>';
       }}
     />
   );
@@ -34,7 +35,10 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { cart, removeFromCart, updateQuantity } = useCart();
   const [, navigate] = useLocation();
 
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPrice = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   const handleCheckout = () => {
     onClose();
@@ -59,7 +63,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
-          <h2 className="text-2xl font-light tracking-wider text-foreground">CART</h2>
+          <h2 className="text-2xl font-light tracking-wider text-foreground">
+            CART
+          </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-muted rounded transition-colors"
@@ -72,11 +78,16 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full py-12">
-              <p className="text-muted-foreground text-center">Your cart is empty</p>
+              <p className="text-muted-foreground text-center">
+                Your cart is empty
+              </p>
             </div>
           ) : (
             cart.map((item, index) => (
-              <div key={index} className="flex gap-4 pb-6 border-b border-border">
+              <div
+                key={index}
+                className="flex gap-4 pb-6 border-b border-border"
+              >
                 {/* Image */}
                 <div className="w-24 h-24 rounded overflow-hidden bg-card flex-shrink-0">
                   <ProductThumb src={item.image} alt={item.name} />
@@ -85,15 +96,30 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 {/* Details */}
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-light text-foreground mb-1">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      EGP {item.price.toFixed(2)}
-                    </p>
+                    <h3 className="font-light text-foreground mb-1">
+                      {item.name}
+                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm text-foreground">
+                        EGP {item.price.toFixed(2)}
+                      </p>
+                      {item.originalPrice && (
+                        <>
+                          <p className="text-xs text-muted-foreground line-through">
+                            EGP {item.originalPrice.toFixed(2)}
+                          </p>
+                          <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-light">
+                            SALE
+                          </span>
+                        </>
+                      )}
+                    </div>
                     {item.customizations && item.customizations.length > 0 && (
                       <div className="mt-1 space-y-0.5">
                         {item.customizations.map((c, i) => (
                           <p key={i} className="text-xs text-muted-foreground">
-                            {c.title}: <span className="text-foreground">{c.value}</span>
+                            {c.title}:{" "}
+                            <span className="text-foreground">{c.value}</span>
                           </p>
                         ))}
                       </div>
@@ -103,14 +129,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {/* Quantity Controls — buttons only */}
                   <div className="flex items-center gap-2 mt-2">
                     <button
-                      onClick={() => updateQuantity(index, Math.max(1, item.quantity - 1))}
+                      onClick={() =>
+                        updateQuantity(index, Math.max(1, item.quantity - 1))
+                      }
                       disabled={item.quantity <= 1}
                       className="p-1 hover:bg-muted rounded transition-colors disabled:opacity-40"
                       aria-label="Decrease"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-6 text-center text-sm select-none">{item.quantity}</span>
+                    <span className="w-6 text-center text-sm select-none">
+                      {item.quantity}
+                    </span>
                     <button
                       onClick={() => updateQuantity(index, item.quantity + 1)}
                       className="p-1 hover:bg-muted rounded transition-colors"
@@ -135,6 +165,23 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         {/* Footer */}
         {cart.length > 0 && (
           <div className="border-t border-border p-6 space-y-4 shrink-0">
+            {/* Savings */}
+            {cart.some(i => i.originalPrice) && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-green-600 font-light">You save:</span>
+                <span className="text-green-600 font-light">
+                  EGP{" "}
+                  {cart
+                    .reduce(
+                      (sum, i) =>
+                        sum +
+                        ((i.originalPrice ?? i.price) - i.price) * i.quantity,
+                      0
+                    )
+                    .toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Subtotal:</span>
               <span className="text-xl font-light text-foreground">
