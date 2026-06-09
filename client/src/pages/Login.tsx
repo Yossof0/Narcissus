@@ -16,16 +16,24 @@ function detectIdentifierType(identifier: string): "email" | "username" {
 
 // Popup for username login — choose confirmation method
 function ConfirmMethodPopup({
-                              onSelect,
-                              onClose,
-                            }: {
+  onSelect,
+  onClose,
+}: {
   onSelect: (method: "email" | "phone") => void;
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-card border border-border rounded-lg p-8 w-80 shadow-xl" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-light tracking-wider text-foreground mb-2">CHOOSE CONFIRMATION</h3>
+    <div
+      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card border border-border rounded-lg p-8 w-80 shadow-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-light tracking-wider text-foreground mb-2">
+          CHOOSE CONFIRMATION
+        </h3>
         <p className="text-sm text-muted-foreground mb-6">
           How would you like to confirm your login?
         </p>
@@ -36,8 +44,12 @@ function ConfirmMethodPopup({
           >
             <span className="text-xl">📧</span>
             <div>
-              <p className="text-sm font-light text-foreground">Confirm via Email</p>
-              <p className="text-xs text-muted-foreground">We'll send a link to your email</p>
+              <p className="text-sm font-light text-foreground">
+                Confirm via Email
+              </p>
+              <p className="text-xs text-muted-foreground">
+                We'll send a link to your email
+              </p>
             </div>
           </button>
           <button
@@ -46,12 +58,18 @@ function ConfirmMethodPopup({
           >
             <span className="text-xl">📱</span>
             <div>
-              <p className="text-sm font-light text-foreground">Confirm via SMS</p>
-              <p className="text-xs text-muted-foreground">We'll send a code to your phone</p>
+              <p className="text-sm font-light text-foreground">
+                Confirm via SMS
+              </p>
+              <p className="text-xs text-muted-foreground">
+                We'll send a code to your phone
+              </p>
             </div>
           </button>
         </div>
-        <Button variant="outline" className="w-full" onClick={onClose}>Cancel</Button>
+        <Button variant="outline" className="w-full" onClick={onClose}>
+          Cancel
+        </Button>
       </div>
     </div>
   );
@@ -68,25 +86,39 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim()) { toast.error("Please enter your email, username, or phone number."); return; }
-    if (password.length < 6) { toast.error("Password must be at least 6 characters."); return; }
+    if (!identifier.trim()) {
+      toast.error("Please enter your email, username, or phone number.");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
 
     const type = detectIdentifierType(identifier);
 
     setIsLoading(true);
     try {
       if (type === "email") {
-        const { error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: identifier,
+          password,
+        });
         if (error) throw error;
         toast.success("Welcome back!");
         navigate("/");
       } else {
         // Username: resolve to email then sign in
-        const res = await fetch(`/api/auth/resolve-identifier?identifier=${encodeURIComponent(identifier)}`);
+        const res = await fetch(
+          `/api/auth/resolve-identifier?identifier=${encodeURIComponent(identifier)}`
+        );
         if (!res.ok) throw new Error("Account not found.");
         const data = await res.json();
         if (!data.email) throw new Error("Account not found.");
-        const { error } = await supabase.auth.signInWithPassword({ email: data.email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password,
+        });
         if (error) throw error;
         toast.success("Welcome back!");
         navigate("/");
@@ -100,7 +132,10 @@ export default function Login() {
 
   const handleForgotPassword = async () => {
     const id = identifier.trim();
-    if (!id) { toast.error("Enter your email, username, or phone first."); return; }
+    if (!id) {
+      toast.error("Enter your email, username, or phone first.");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -108,7 +143,9 @@ export default function Login() {
 
       // If not an email, resolve it
       if (!id.includes("@")) {
-        const res = await fetch(`/api/auth/resolve-identifier?identifier=${encodeURIComponent(id)}`);
+        const res = await fetch(
+          `/api/auth/resolve-identifier?identifier=${encodeURIComponent(id)}`
+        );
         if (!res.ok) throw new Error("Account not found.");
         const data = await res.json();
         email = data.email;
@@ -147,10 +184,28 @@ export default function Login() {
         });
         toast.success("Reset link sent to your email!");
       } else {
-        toast.info("SMS reset requires phone verification setup. Reset via email instead.");
+        toast.info(
+          "SMS reset requires phone verification setup. Reset via email instead."
+        );
       }
     } catch {
       toast.error("Failed to send reset.");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${import.meta.env.VITE_SITE_URL}/`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast.error(err.message || "Google sign-in failed");
+      setIsLoading(false);
     }
   };
 
@@ -168,8 +223,10 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-12">
-          <button onClick={() => navigate("/")}
-                  className="text-3xl font-light tracking-[0.4em] text-foreground hover:text-muted-foreground transition-colors">
+          <button
+            onClick={() => navigate("/")}
+            className="text-3xl font-light tracking-[0.4em] text-foreground hover:text-muted-foreground transition-colors"
+          >
             NARCISSUS
           </button>
           <div className="w-16 h-px bg-accent mx-auto mt-4" />
@@ -179,14 +236,23 @@ export default function Login() {
         <div className="bg-muted/40 border border-border rounded-lg px-5 py-4 mb-6 text-center">
           <p className="text-sm text-muted-foreground">
             You don't need an account to shop.{" "}
-            <button onClick={() => navigate("/products")} className="underline hover:text-foreground transition-colors font-light">
+            <button
+              onClick={() => navigate("/products")}
+              className="underline hover:text-foreground transition-colors font-light"
+            >
               Browse & checkout as guest →
             </button>
           </p>
           <p className="text-xs text-muted-foreground mt-2">
             Yet you still need an account to access{" "}
-            <strong className="text-foreground font-light">Order History</strong>,{" "}
-            <strong className="text-foreground font-light">Track Your Orders</strong>, and other features.
+            <strong className="text-foreground font-light">
+              Order History
+            </strong>
+            ,{" "}
+            <strong className="text-foreground font-light">
+              Track Your Orders
+            </strong>
+            , and other features.
           </p>
         </div>
 
@@ -211,13 +277,18 @@ export default function Login() {
               </div>
               {idType && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Detected: <span className="text-foreground font-light capitalize">{idType}</span>
+                  Detected:{" "}
+                  <span className="text-foreground font-light capitalize">
+                    {idType}
+                  </span>
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-light text-foreground mb-2">Password</label>
+              <label className="block text-sm font-light text-foreground mb-2">
+                Password
+              </label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -229,18 +300,71 @@ export default function Login() {
                   className="pl-9 pr-10"
                 />
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
 
-            <Button type="submit" disabled={isLoading}
-                    className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-sm font-light tracking-wider">
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "SIGN IN"}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-sm font-light tracking-wider"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "SIGN IN"
+              )}
             </Button>
           </form>
+
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-border" />
+            <p className="text-xs text-muted-foreground">OR</p>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <Button
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full py-6 text-sm font-light tracking-wider"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                SIGN IN WITH GOOGLE
+              </>
+            )}
+          </Button>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             Forgot your password?{" "}
@@ -256,13 +380,19 @@ export default function Login() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           No account?{" "}
-          <button onClick={() => navigate("/signup")} className="underline hover:text-foreground transition-colors font-medium">
+          <button
+            onClick={() => navigate("/signup")}
+            className="underline hover:text-foreground transition-colors font-medium"
+          >
             Sign Up!
           </button>
         </p>
 
         <p className="text-center text-xs text-muted-foreground mt-3">
-          <button onClick={() => navigate("/")} className="underline hover:text-foreground transition-colors">
+          <button
+            onClick={() => navigate("/")}
+            className="underline hover:text-foreground transition-colors"
+          >
             Back to store
           </button>
         </p>
